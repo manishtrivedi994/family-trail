@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 
 interface EmailOTPFormProps {
   onSuccess: (userId: string) => void
+  redirectTo?: string
 }
 
 const slide = {
@@ -13,7 +14,7 @@ const slide = {
   exit:   { opacity: 0, x: -20 },
 }
 
-export function EmailOTPForm({ onSuccess }: EmailOTPFormProps) {
+export function EmailOTPForm({ onSuccess, redirectTo }: EmailOTPFormProps) {
   const [step, setStep] = useState<'email' | 'otp'>('email')
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
@@ -25,7 +26,12 @@ export function EmailOTPForm({ onSuccess }: EmailOTPFormProps) {
     setError('')
     setLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email })
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: redirectTo,
+        }
+      })
       if (error) throw error
       setStep('otp')
     } catch (err) {
@@ -98,7 +104,7 @@ export function EmailOTPForm({ onSuccess }: EmailOTPFormProps) {
           className="flex flex-col gap-4"
         >
           <p className="text-ft-text2 text-sm leading-relaxed">
-            We sent a 6-digit code to <span className="text-ft-v200">{email}</span>
+            Click the link in the email we sent to <span className="text-ft-v200">{email}</span>, or enter the 6-digit code below.
           </p>
 
           <div className="flex flex-col gap-1.5">

@@ -105,6 +105,13 @@ export function InviteClaim() {
     }
   }
 
+  // Auto-claim if the user is already logged in when they land here
+  useEffect(() => {
+    if (pageState === 'valid' && user?.id && !claiming && invite) {
+      handleClaim(user.id)
+    }
+  }, [pageState, user?.id, !!invite])
+
   // ── Loading ────────────────────────────────────────────────────────────────
   if (pageState === 'loading') {
     return (
@@ -284,7 +291,7 @@ export function InviteClaim() {
 
                 {claimError && <p className="text-ft-rose text-xs">{claimError}</p>}
 
-                <EmailOTPForm onSuccess={handleClaim} />
+                <EmailOTPForm onSuccess={handleClaim} redirectTo={window.location.href} />
               </div>
             )}
           </div>
