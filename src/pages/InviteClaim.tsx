@@ -5,7 +5,6 @@ import { AlertCircle, CheckCircle2, GitBranch, Users } from 'lucide-react'
 import { fetchInviteByToken, claimInvite, getInviteStatus } from '../hooks/useInvite'
 import type { InviteWithJoins } from '../hooks/useInvite'
 import { useAuthStore } from '../store/authStore'
-import { supabase } from '../lib/supabase'
 import { EmailOTPForm } from '../components/ui/EmailOTPForm'
 import { AnimatedOrbs } from '../components/ui/AnimatedOrbs'
 import { LogoMark } from '../components/ui/LogoMark'
@@ -234,11 +233,10 @@ export function InviteClaim() {
             )}
 
             <div className="mt-3 pt-3 border-t border-ft-border">
-              <span className={`text-[10px] font-medium px-2 py-1 rounded-full uppercase tracking-wider ${
-                invite.role === 'editor'
+              <span className={`text-[10px] font-medium px-2 py-1 rounded-full uppercase tracking-wider ${invite.role === 'editor'
                   ? 'bg-ft-teal/10 text-ft-teal border border-ft-teal/20'
                   : 'bg-ft-gold/10 text-ft-gold border border-ft-gold/20'
-              }`}>
+                }`}>
                 {invite.role} access
               </span>
             </div>
