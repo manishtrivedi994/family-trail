@@ -76,7 +76,6 @@ export function deriveRelationships(
   anchorId: string,
   relation: Relation,
   treeId: string,
-  members: Member[],
   relationships: Relationship[],
   grandparentTargetParentId?: string
 ): DeriveResult {
