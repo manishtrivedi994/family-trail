@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ft-bg text-ft-text font-sans antialiased;
+  }
+  * {
+    @apply border-ft-border;
+  }
+}
+
+/* React Flow dark theme overrides */
+.react-flow__renderer { background: #08060F; }
+.react-flow__controls button {
+  background: #17132B;
+  border-color: rgba(160,130,255,0.12);
+  color: rgba(237,233,255,0.6);
+  fill: rgba(237,233,255,0.6);
+}
+.react-flow__controls button:hover {
+  background: #1F1A38;
+  color: #EDE9FF;
+  fill: #EDE9FF;
+}
+.react-flow__controls-button svg { fill: inherit; }
+.react-flow__minimap { border-radius: 12px; overflow: hidden; }
+.react-flow__handle { opacity: 0; transition: opacity 0.15s; }
+.react-flow__node:hover .react-flow__handle { opacity: 1; }
+.react-flow__node.selected .react-flow__handle { opacity: 1; }
+
+@keyframes shimmer {
+  0%   { opacity: 0.5; }
+  50%  { opacity: 0.8; }
+  100% { opacity: 0.5; }
+}
+
+@layer utilities {
+  .animate-shimmer { animation: shimmer 1.8s ease-in-out infinite; }
+  .gradient-text {
+    background: linear-gradient(135deg, #C4B5FD 0%, #9B7AFF 50%, #D4A843 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-br from-ft-v500 to-ft-v400 text-white font-semibold rounded-2xl px-8 py-3.5
+           hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(124,92,255,0.45)] transition-all duration-200;
+  }
+  .btn-ghost {
+    @apply border border-ft-border2 text-ft-v200 rounded-2xl px-8 py-3.5
+           hover:bg-ft-border hover:border-ft-border3 transition-all duration-200;
+  }
+  .card-glass {
+    @apply bg-ft-bg3 border border-ft-border rounded-2xl;
+  }
+}
