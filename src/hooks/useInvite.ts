@@ -34,7 +34,8 @@ export async function createInvite(
 }
 
 export function getInviteUrl(token: string): string {
-  return `${window.location.origin}/join/${token}`
+  const baseUrl = (import.meta.env.VITE_APP_URL || window.location.origin).replace(/\/$/, '')
+  return `${baseUrl}/join/${token}`
 }
 
 export async function fetchInviteByToken(token: string): Promise<InviteWithJoins | null> {
