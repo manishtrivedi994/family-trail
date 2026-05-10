@@ -2,22 +2,7 @@ import { useRef, useState } from 'react'
 import { Camera, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useToastStore } from '../../store/toastStore'
-
-async function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => {
-      const MAX = 800
-      const scale = Math.min(MAX / img.width, MAX / img.height, 1)
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width * scale
-      canvas.height = img.height * scale
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.85)
-    }
-    img.src = URL.createObjectURL(file)
-  })
-}
+import { compressImage } from '../../lib/imageUtils'
 
 interface PhotoUploadProps {
   currentPhotoUrl: string | null

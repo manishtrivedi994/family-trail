@@ -3,8 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Pencil, Network } from 'lucide-react'
 import { useMember } from '../hooks/useMember'
+import { useTree } from '../hooks/useTree'
+import { usePermissions } from '../hooks/usePermissions'
 import { useTreeStore } from '../store/treeStore'
 import { useAuthStore } from '../store/authStore'
+import { useToastStore } from '../store/toastStore'
+import { supabase } from '../lib/supabase'
 import { getSideMap } from '../lib/treeUtils'
 import { ProfileHeader } from '../components/profile/ProfileHeader'
 import { ProfileFields } from '../components/profile/ProfileFields'
@@ -17,6 +21,10 @@ export function MemberPage() {
   const navigate = useNavigate()
   const [showEdit, setShowEdit] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  useTree(treeId)
+  const { canEdit } = usePermissions()
+  const addToast = useToastStore((s) => s.addToast)
 
   const { member, relationships, connections, loading, error } = useMember(treeId, memberId, refreshKey)
 
@@ -48,6 +56,21 @@ export function MemberPage() {
     setRefreshKey((k) => k + 1)
   }
 
+  async function handlePhotoUploaded(url: string) {
+    if (!member) return
+    try {
+      const { error } = await supabase
+        .from('members')
+        .update({ photo_url: url })
+        .eq('id', member.id)
+      if (error) throw error
+      addToast('Profile photo updated', 'success')
+      setRefreshKey((k) => k + 1)
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to update database', 'error')
+    }
+  }
+
   return (
     <motion.div
       className="min-h-screen bg-ft-bg"
@@ -72,7 +95,7 @@ export function MemberPage() {
               {member?.name ?? '…'}
             </p>
           </div>
-          {member && (
+          {member && canEdit && (
             <button
               onClick={() => setShowEdit(true)}
               className="p-2 rounded-xl text-ft-text3 hover:text-ft-text hover:bg-ft-bg4 transition-colors"
@@ -104,6 +127,9 @@ export function MemberPage() {
                 member={member}
                 side={side}
                 treeId={treeId}
+                canEdit={canEdit}
+                userId={user?.id}
+                onPhotoUploaded={handlePhotoUploaded}
                 onEdit={() => setShowEdit(true)}
               />
               <div className="px-5 pb-5 pt-3 border-t border-ft-border">

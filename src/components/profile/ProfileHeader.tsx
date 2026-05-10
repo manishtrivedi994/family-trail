@@ -1,7 +1,11 @@
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Pencil, Network } from 'lucide-react'
+import { Pencil, Network, Camera, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { Member, MemberSide } from '../../types'
+import { supabase } from '../../lib/supabase'
+import { useToastStore } from '../../store/toastStore'
+import { compressImage } from '../../lib/imageUtils'
 
 const bannerGradients: Record<MemberSide, string> = {
   owner:    'linear-gradient(135deg, #1A1040 0%, #2E1A6E 50%, #1A2840 100%)',
@@ -40,10 +44,17 @@ interface ProfileHeaderProps {
   side: MemberSide
   treeId: string
   onEdit: () => void
+  canEdit?: boolean
+  userId?: string
+  onPhotoUploaded?: (url: string) => void
 }
 
-export function ProfileHeader({ member, side, treeId, onEdit }: ProfileHeaderProps) {
+export function ProfileHeader({ member, side, treeId, onEdit, canEdit = false, userId, onPhotoUploaded }: ProfileHeaderProps) {
   const navigate = useNavigate()
+  const addToast = useToastStore((s) => s.addToast)
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+
   const initials = member.name
     .split(' ')
     .map((n) => n[0])
@@ -52,6 +63,56 @@ export function ProfileHeader({ member, side, treeId, onEdit }: ProfileHeaderPro
     .toUpperCase()
 
   const orbColor = orbColors[side]
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    
+    if (!file.type.startsWith('image/')) {
+      addToast('Please select an image file', 'error')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Photo upload failed — max 5MB', 'error')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const compressed = await compressImage(file)
+      const path = `${userId}/${member.id}/${Date.now()}.jpg`
+      const { error } = await supabase.storage
+        .from('member-photos')
+        .upload(path, compressed, { contentType: 'image/jpeg', upsert: true })
+      
+      if (error) throw error
+      const { data: { publicUrl } } = supabase.storage.from('member-photos').getPublicUrl(path)
+      
+      if (onPhotoUploaded) {
+        onPhotoUploaded(publicUrl)
+      }
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Upload failed', 'error')
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  const avatarContent = member.photo_url ? (
+    <img
+      src={member.photo_url}
+      alt={member.name}
+      className="w-20 h-20 rounded-full object-cover border-4 border-ft-bg shrink-0"
+    />
+  ) : (
+    <div
+      className="w-20 h-20 rounded-full border-4 border-ft-bg flex items-center justify-center text-xl font-bold text-white shrink-0"
+      style={{ background: avatarGradients[side] }}
+    >
+      {initials}
+    </div>
+  )
 
   return (
     <div>
@@ -76,21 +137,43 @@ export function ProfileHeader({ member, side, treeId, onEdit }: ProfileHeaderPro
 
       {/* Avatar + actions */}
       <div className="px-5 pb-4">
-        <div className="flex items-end justify-between -mt-10 mb-4">
-          {member.photo_url ? (
-            <img
-              src={member.photo_url}
-              alt={member.name}
-              className="w-20 h-20 rounded-full object-cover border-4 border-ft-bg shrink-0"
-            />
-          ) : (
-            <div
-              className="w-20 h-20 rounded-full border-4 border-ft-bg flex items-center justify-center text-xl font-bold text-white shrink-0"
-              style={{ background: avatarGradients[side] }}
-            >
-              {initials}
-            </div>
-          )}
+        <div className="relative z-10 flex items-end justify-between -mt-10 mb-4">
+          <div className="relative group shrink-0">
+            {canEdit ? (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="block relative rounded-full overflow-hidden focus:outline-none disabled:opacity-100"
+                title="Click to update photo"
+              >
+                {avatarContent}
+                {/* Hover state */}
+                <div className="absolute inset-0 rounded-full bg-black/50 border-4 border-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploading ? (
+                    <Loader2 size={18} className="text-white animate-spin" />
+                  ) : (
+                    <Camera size={18} className="text-white" />
+                  )}
+                </div>
+                {/* Loading state spinning overlay */}
+                {uploading && (
+                  <div className="absolute inset-0 rounded-full border-2 border-ft-v400 border-t-transparent animate-spin" />
+                )}
+              </button>
+            ) : (
+              avatarContent
+            )}
+            {canEdit && (
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFile}
+              />
+            )}
+          </div>
 
           <div className="flex gap-2 pb-1">
             <button
@@ -127,3 +210,4 @@ export function ProfileHeader({ member, side, treeId, onEdit }: ProfileHeaderPro
     </div>
   )
 }
+

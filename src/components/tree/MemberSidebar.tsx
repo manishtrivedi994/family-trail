@@ -327,16 +327,18 @@ export function MemberSidebar({ sideMap, treeId, myMemberId, onEdit, onAddConnec
             <div className="shrink-0 px-4 pt-4 pb-3 border-b border-ft-border">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-ft-text shrink-0"
+                  <button
+                    onClick={() => navigate(`/tree/${treeId}/member/${member.id}`)}
+                    className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-sm font-bold text-ft-text shrink-0 hover:opacity-80 transition-opacity group/avatar"
                     style={!member.photo_url ? { background: sideGradient[side] } : undefined}
+                    title="View profile"
                   >
                     {member.photo_url ? (
                       <img
                         src={member.photo_url}
                         alt={member.name}
                         loading="lazy"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover/avatar:scale-105 transition-transform"
                         onError={(e) => {
                           const t = e.currentTarget
                           t.style.display = 'none'
@@ -344,7 +346,7 @@ export function MemberSidebar({ sideMap, treeId, myMemberId, onEdit, onAddConnec
                         }}
                       />
                     ) : initials}
-                  </div>
+                  </button>
                   <div className="min-w-0">
                     <p className="font-display text-xl font-semibold text-ft-text truncate leading-tight">
                       {member.name}
