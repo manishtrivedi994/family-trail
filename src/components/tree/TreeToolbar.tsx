@@ -54,14 +54,28 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
     const ok = window.confirm(`Leave "${tree.name}"? You'll need a new invite to rejoin.`)
     if (!ok) return
     try {
-      await supabase
+      // 1. Detach the user_id from the member node so the spot opens up again
+      const myMember = members.find(m => m.user_id === user.id)
+      if (myMember) {
+        await supabase
+          .from('members')
+          .update({ user_id: null })
+          .eq('id', myMember.id)
+      }
+
+      // 2. Remove membership record
+      const { error } = await supabase
         .from('tree_members')
         .delete()
         .eq('tree_id', tree.id)
         .eq('user_id', user.id)
+      
+      if (error) throw error
+
       addToast('You left the tree', 'info')
       navigate('/dashboard')
-    } catch {
+    } catch (err) {
+      console.error('Error leaving tree:', err)
       addToast('Failed to leave tree', 'error')
     }
   }
