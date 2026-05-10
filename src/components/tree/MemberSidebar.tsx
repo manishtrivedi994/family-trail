@@ -353,7 +353,11 @@ export function MemberSidebar({ sideMap, treeId, myMemberId, onEdit, onAddConnec
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span className={`w-1.5 h-1.5 rounded-full ${sideDot[side]}`} />
-                      <span className="text-[11px] text-ft-text3 font-medium">{sideLabel[side]}</span>
+                      <span className="text-[11px] text-ft-text3 font-medium">
+                        {side === 'spouse' && member.id && myMemberId 
+                          ? (relationships.some(r => r.type === 'spouse_of' && ((r.from_id === member.id && r.to_id === myMemberId) || (r.to_id === member.id && r.from_id === myMemberId))) ? 'Spouse' : "Spouse's side")
+                          : sideLabel[side]}
+                      </span>
                       {!member.is_living && (
                         <span className="text-[11px] text-ft-text3">· Deceased</span>
                       )}

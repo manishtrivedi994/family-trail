@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import type { Member, MemberSide } from '../../types'
 import { useTreeStore } from '../../store/treeStore'
+import { useAuthStore } from '../../store/authStore'
 
 type MemberNodeData = { member: Member; side: MemberSide }
 export type MemberNodeType = Node<MemberNodeData, 'memberNode'>
@@ -36,7 +37,20 @@ export function MemberNode({ data, selected }: NodeProps<MemberNodeType>) {
   const setSelectedMember = useTreeStore((s) => s.setSelectedMember)
   const isNew = useTreeStore((s) => s.newMemberIds.includes(member.id))
   const markMemberSeen = useTreeStore((s) => s.markMemberSeen)
+  const userId = useAuthStore((s) => s.user?.id)
+  const myMemberId = useTreeStore((s) => s.members.find(m => m.user_id === userId)?.id)
+  const isDirectSpouse = useTreeStore((s) => 
+    s.relationships.some(r => 
+      r.type === 'spouse_of' && 
+      ((r.from_id === member.id && r.to_id === myMemberId) || 
+       (r.to_id === member.id && r.from_id === myMemberId))
+    )
+  )
+  
   const cfg = sideConfig[side]
+  const computedLabel = side === 'spouse' 
+    ? (isDirectSpouse ? 'Spouse' : "Spouse's Family")
+    : sideLabel[side]
 
   useEffect(() => {
     if (isNew) {
@@ -103,7 +117,7 @@ export function MemberNode({ data, selected }: NodeProps<MemberNodeType>) {
           className="text-[10px] uppercase tracking-widest font-medium"
           style={{ color: cfg.textAccent }}
         >
-          {sideLabel[side]}
+          {computedLabel}
         </p>
         {!member.is_living && (
           <span className="text-[9px] text-ft-text3">✦</span>
