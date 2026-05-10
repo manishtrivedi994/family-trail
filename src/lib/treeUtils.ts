@@ -11,8 +11,8 @@ interface NewRelationship {
   type: RelationshipType
 }
 
-type DeriveResult =
-  | { ok: true; relationships: NewRelationship[] }
+export type DeriveResult =
+  | { ok: true; relationships: NewRelationship[]; reason?: undefined }
   | { ok: false; reason: 'NEEDS_DISAMBIGUATION' }
   | { ok: false; reason: 'CYCLE'; violations: { from_id: string; to_id: string }[] }
 

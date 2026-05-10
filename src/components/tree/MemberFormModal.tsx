@@ -148,7 +148,6 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
           anchorMemberId,
           relation,
           treeId,
-          [...storeMembers, newMember],
           storeRelationships,
           grandparentTargetId ?? undefined
         )
