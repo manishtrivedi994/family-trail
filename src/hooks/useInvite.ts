@@ -60,23 +60,36 @@ export async function fetchTreeInvites(treeId: string): Promise<InviteWithMember
 }
 
 export async function claimInvite(invite: Invite, userId: string): Promise<void> {
-  await supabase.from('tree_members').upsert({
-    tree_id: invite.tree_id,
-    user_id: userId,
-    role: invite.role,
-  })
+  // 1. Join the tree (creates RLS visibility)
+  // Using .insert instead of .upsert as users don't have UPDATE permissions on their self-join
+  const { error: joinError } = await supabase
+    .from('tree_members')
+    .insert({
+      tree_id: invite.tree_id,
+      user_id: userId,
+      role: invite.role,
+    })
+  
+  if (joinError) throw joinError
 
+  // 2. Link the member node if specified
   if (invite.member_id) {
-    await supabase
+    const { error: linkError } = await supabase
       .from('members')
       .update({ user_id: userId })
       .eq('id', invite.member_id)
+    
+    // Note: might fail if user role lacks update permission, log it for now but don't strictly block
+    if (linkError) console.warn('Failed to link member node:', linkError)
   }
 
-  await supabase
+  // 3. Mark the invite as claimed
+  const { error: claimError } = await supabase
     .from('invites')
     .update({ claimed_by: userId, claimed_at: new Date().toISOString() })
     .eq('id', invite.id)
+  
+  if (claimError) console.warn('Failed to update invite record:', claimError)
 }
 
 export async function revokeInvite(inviteId: string): Promise<void> {
