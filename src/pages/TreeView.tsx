@@ -15,6 +15,7 @@ import { MemberSidebar } from '../components/tree/MemberSidebar'
 import { RelationshipsPanel } from '../components/tree/RelationshipsPanel'
 import { SearchOverlay } from '../components/tree/SearchOverlay'
 import { InvitePanel } from '../components/invite/InvitePanel'
+import { LogoMark } from '../components/ui/LogoMark'
 import type { Member, MemberSide } from '../types'
 
 function useOnlineStatus() {
@@ -32,17 +33,6 @@ function useOnlineStatus() {
   return online
 }
 
-function LogoMark() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="8"  r="5" fill="rgba(155,122,255,0.9)" />
-      <circle cx="8"  cy="28" r="4" fill="rgba(45,212,191,0.8)" />
-      <circle cx="28" cy="28" r="4" fill="rgba(212,168,67,0.8)" />
-      <line x1="18" y1="13" x2="8"  y2="24" stroke="rgba(155,122,255,0.3)" strokeWidth="1.5" />
-      <line x1="18" y1="13" x2="28" y2="24" stroke="rgba(155,122,255,0.3)" strokeWidth="1.5" />
-    </svg>
-  )
-}
 
 interface NavItemProps {
   icon: React.ComponentType<{ size?: number; className?: string }>
@@ -354,7 +344,7 @@ export function TreeView() {
               transition={{ type: 'spring', damping: 24, stiffness: 280 }}
               className="bg-ft-bg2 border border-ft-border2 rounded-3xl p-8 w-full max-w-md text-center"
             >
-              <div className="flex justify-center mb-5"><LogoMark /></div>
+              <div className="flex justify-center mb-5"><LogoMark size={24} /></div>
               <h2 className="font-display text-3xl font-bold text-ft-text mb-2">Welcome to the family tree</h2>
               <p className="text-ft-text2 text-sm leading-relaxed mb-6">
                 {ownerMember

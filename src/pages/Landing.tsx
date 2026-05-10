@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { GitBranch, Users, Shield, Smartphone } from 'lucide-react'
 import { AnimatedOrbs } from '../components/ui/AnimatedOrbs'
+import { LogoMark } from '../components/ui/LogoMark'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -42,17 +43,6 @@ const stats = [
   { value: '3.1k', label: 'Families' },
 ]
 
-function LogoMark() {
-  return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="8" r="5" fill="rgba(155,122,255,0.9)" />
-      <circle cx="8"  cy="28" r="4" fill="rgba(45,212,191,0.8)" />
-      <circle cx="28" cy="28" r="4" fill="rgba(212,168,67,0.8)" />
-      <line x1="18" y1="13" x2="8"  y2="24" stroke="rgba(155,122,255,0.3)" strokeWidth="1.5" />
-      <line x1="18" y1="13" x2="28" y2="24" stroke="rgba(155,122,255,0.3)" strokeWidth="1.5" />
-    </svg>
-  )
-}
 
 export function Landing() {
   return (
@@ -69,7 +59,7 @@ export function Landing() {
         >
           {/* Logo + wordmark */}
           <motion.div variants={fadeUp} className="flex items-center gap-3">
-            <LogoMark />
+            <LogoMark size={36} />
             <span className="font-display text-sm tracking-[0.25em] uppercase text-ft-text3">
               Family Trail
             </span>

@@ -8,6 +8,7 @@ import { useTrees } from '../hooks/useTrees'
 import { trackEvent } from '../lib/analytics'
 import type { Member, Tree, MemberRole, TreeVisibility } from '../types'
 import { format, parseISO, differenceInDays, differenceInYears, startOfDay } from 'date-fns'
+import { LogoMark } from '../components/ui/LogoMark'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -40,14 +41,7 @@ function TopBar() {
     <header className="sticky top-0 z-30 bg-ft-bg2/80 backdrop-blur border-b border-ft-border">
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="4" r="2.5" fill="#9B7AFF" />
-            <circle cx="5" cy="18" r="2.5" fill="#7C5CFF" />
-            <circle cx="19" cy="18" r="2.5" fill="#7C5CFF" />
-            <line x1="12" y1="6.5" x2="12" y2="12" stroke="#9B7AFF" strokeWidth="1.5" />
-            <line x1="12" y1="12" x2="5" y2="15.5" stroke="#7C5CFF" strokeWidth="1.5" />
-            <line x1="12" y1="12" x2="19" y2="15.5" stroke="#7C5CFF" strokeWidth="1.5" />
-          </svg>
+          <LogoMark size={22} />
           <span className="font-display text-sm tracking-widest uppercase text-ft-text3">Family Trail</span>
         </div>
         <div className="flex items-center gap-2">

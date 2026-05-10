@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Mail, KeyRound } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { AnimatedOrbs } from '../components/ui/AnimatedOrbs'
+import { LogoMark } from '../components/ui/LogoMark'
 
 type Step = 'email' | 'otp'
 type Mode = 'signin' | 'signup'
@@ -14,17 +15,6 @@ const slide = {
   exit:   { opacity: 0, x: -24 },
 }
 
-function LogoMark() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="8" r="5" fill="rgba(155,122,255,0.9)" />
-      <circle cx="8"  cy="28" r="4" fill="rgba(45,212,191,0.8)" />
-      <circle cx="28" cy="28" r="4" fill="rgba(212,168,67,0.8)" />
-      <line x1="18" y1="13" x2="8"  y2="24" stroke="rgba(155,122,255,0.3)" strokeWidth="1.5" />
-      <line x1="18" y1="13" x2="28" y2="24" stroke="rgba(155,122,255,0.3)" strokeWidth="1.5" />
-    </svg>
-  )
-}
 
 export function Auth() {
   const navigate = useNavigate()
@@ -73,7 +63,7 @@ export function Auth() {
         <div className="card-glass p-8">
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8">
-            <LogoMark />
+            <LogoMark size={28} />
             <span className="font-display text-sm tracking-[0.25em] uppercase text-ft-text3">
               Family Trail
             </span>
