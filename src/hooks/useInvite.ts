@@ -5,6 +5,7 @@ import type { Invite, MemberRole } from '../types'
 export interface InviteWithJoins extends Invite {
   trees: { name: string; owner_id: string } | null
   members: { name: string } | null
+  top_member_names?: string[]
 }
 
 export type InviteWithMember = Invite & { members: { name: string } | null }
@@ -40,13 +41,10 @@ export function getInviteUrl(token: string): string {
 
 export async function fetchInviteByToken(token: string): Promise<InviteWithJoins | null> {
   const { data, error } = await supabase
-    .from('invites')
-    .select('*, trees(name, owner_id), members(name)')
-    .eq('token', token)
-    .single()
+    .rpc('get_invite_by_token', { token_param: token })
 
-  if (error) return null
-  return data as InviteWithJoins
+  if (error || !data) return null
+  return data as unknown as InviteWithJoins
 }
 
 export async function fetchTreeInvites(treeId: string): Promise<InviteWithMember[]> {

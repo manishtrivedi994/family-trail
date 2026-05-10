@@ -70,27 +70,16 @@ export function InviteClaim() {
       // Already claimed by current user
       if (inv.claimed_by && inv.claimed_by === user?.id) {
         setInvite(inv)
+        if (inv.top_member_names) setMemberNames(inv.top_member_names)
         setPageState('claimed')
         return
       }
 
       setInvite(inv)
+      if (inv.top_member_names) setMemberNames(inv.top_member_names)
       setPageState('valid')
     })
   }, [token, user?.id])
-
-  // Fetch member names for avatar preview
-  useEffect(() => {
-    if (!invite?.tree_id) return
-    supabase
-      .from('members')
-      .select('name')
-      .eq('tree_id', invite.tree_id)
-      .limit(8)
-      .then(({ data }) => {
-        setMemberNames((data ?? []).map((m: { name: string }) => m.name))
-      })
-  }, [invite?.tree_id])
 
   async function handleClaim(userId: string) {
     if (!invite) return
