@@ -277,29 +277,33 @@ export function getSideMap(
     }
   }
 
-  // Mark siblings of owner and owner's ancestors as owner's family.
-  // Also mark children of owner's ancestors (aunts, uncles, siblings) that
-  // aren't already classified — these are connected via parent_of but the
-  // upward BFS above never traverses downward.
-  const ownerSideIds = [...sideMap.entries()]
-    .filter(([, side]) => side === 'owner' || side === 'ancestor')
-    .map(([id]) => id)
+  // The upward-only BFS never traverses sibling_of edges or goes downward
+  // from ancestors, so siblings (and aunts/uncles) end up as 'unknown'.
+  // Do a single-pass expansion for both owner-side and spouse-side.
+  const expandSide = (targetSide: MemberSide, skipRootId: string | null) => {
+    const sideIds = [...sideMap.entries()]
+      .filter(([, s]) => s === targetSide || (targetSide === 'ancestor' && s === 'owner'))
+      .map(([id]) => id)
 
-  ownerSideIds.forEach((memberId) => {
-    relationships
-      .filter((r) => r.type === 'sibling_of' && (r.from_id === memberId || r.to_id === memberId))
-      .forEach((r) => {
-        const sibId = r.from_id === memberId ? r.to_id : r.from_id
-        if (!sideMap.has(sibId)) sideMap.set(sibId, 'ancestor')
-      })
-    if (memberId !== ownerId) {
+    sideIds.forEach((memberId) => {
       relationships
-        .filter((r) => r.type === 'parent_of' && r.from_id === memberId)
+        .filter((r) => r.type === 'sibling_of' && (r.from_id === memberId || r.to_id === memberId))
         .forEach((r) => {
-          if (!sideMap.has(r.to_id)) sideMap.set(r.to_id, 'ancestor')
+          const sibId = r.from_id === memberId ? r.to_id : r.from_id
+          if (!sideMap.has(sibId)) sideMap.set(sibId, targetSide)
         })
-    }
-  })
+      if (memberId !== skipRootId) {
+        relationships
+          .filter((r) => r.type === 'parent_of' && r.from_id === memberId)
+          .forEach((r) => {
+            if (!sideMap.has(r.to_id)) sideMap.set(r.to_id, targetSide)
+          })
+      }
+    })
+  }
+
+  expandSide('ancestor', ownerId)
+  if (spouseId) expandSide('spouse', spouseId)
 
   members.forEach((m) => { if (!sideMap.has(m.id)) sideMap.set(m.id, 'unknown') })
 
