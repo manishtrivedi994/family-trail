@@ -120,6 +120,12 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
     setTimeout(() => setCopied(false), 2000)
   }
 
+  async function handleCopyInvite(token: string) {
+    const url = getInviteUrl(token)
+    await navigator.clipboard.writeText(url)
+    addToast('Link copied to clipboard', 'success')
+  }
+
   function handleShareWhatsApp() {
     if (!generatedUrl) return
     const text = `Join our family tree on Family Trail: ${generatedUrl}`
@@ -384,20 +390,32 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
                             </div>
                           </div>
 
-                          {status !== 'claimed' && (
-                            <button
-                              onClick={() => handleRevoke(invite.id)}
-                              disabled={revokingId === invite.id}
-                              className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-rose hover:bg-rose-950/30 transition-colors shrink-0 disabled:opacity-40"
-                              title="Revoke invite"
-                            >
-                              {revokingId === invite.id ? (
-                                <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <Trash2 size={13} />
-                              )}
-                            </button>
-                          )}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {status === 'pending' && (
+                              <button
+                                onClick={() => handleCopyInvite(invite.token)}
+                                className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-teal hover:bg-ft-teal/10 transition-colors"
+                                title="Copy link"
+                              >
+                                <Copy size={13} />
+                              </button>
+                            )}
+
+                            {status !== 'claimed' && (
+                              <button
+                                onClick={() => handleRevoke(invite.id)}
+                                disabled={revokingId === invite.id}
+                                className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-rose hover:bg-rose-950/30 transition-colors disabled:opacity-40"
+                                title="Revoke invite"
+                              >
+                                {revokingId === invite.id ? (
+                                  <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 size={13} />
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )
