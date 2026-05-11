@@ -10,8 +10,16 @@ import {
   getInviteStatus,
   revokeInvite,
 } from '../../hooks/useInvite'
+import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../store/authStore'
 import type { InviteWithMember } from '../../hooks/useInvite'
 import type { MemberRole } from '../../types'
+
+interface ContributorRow {
+  user_id: string
+  role: MemberRole
+  display: string
+}
 
 interface InvitePanelProps {
   treeId: string
@@ -61,8 +69,14 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
   const [copied, setCopied] = useState(false)
 
   const [invites, setInvites] = useState<InviteWithMember[]>([])
-  const [loadingInvites, setLoadingInvites] = useState(false)
+  const [contributors, setContributors] = useState<ContributorRow[]>([])
+  const [loadingData, setLoadingData] = useState(false)
   const [revokingId, setRevokingId] = useState<string | null>(null)
+  const [updatingContributorId, setUpdatingContributorId] = useState<string | null>(null)
+  const [updatingInviteId, setUpdatingInviteId] = useState<string | null>(null)
+
+  const currentUser = useAuthStore((s) => s.user)
+  const isOwner = tree?.owner_id === currentUser?.id
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -75,21 +89,96 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
 
   useEffect(() => {
     const t = setTimeout(() => {
-      if (tab === 'manage') loadInvites()
+      if (tab === 'manage') loadAllManagementData()
     }, 0)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab])
 
-  async function loadInvites() {
-    setLoadingInvites(true)
+  async function loadAllManagementData() {
+    setLoadingData(true)
     try {
-      const data = await fetchTreeInvites(treeId)
-      setInvites(data)
-    } catch {
-      addToast('Failed to load invites', 'error')
+      // Load Invites
+      const invitesData = await fetchTreeInvites(treeId)
+      setInvites(invitesData)
+
+      // Load Contributors
+      const { data: memberRows } = await supabase
+        .from('tree_members')
+        .select('user_id, role')
+        .eq('tree_id', treeId)
+      
+      if (memberRows && memberRows.length > 0) {
+        const uids = memberRows.map((r) => r.user_id)
+        const { data: profileRows } = await supabase
+          .from('profiles')
+          .select('id, display_name')
+          .in('id', uids)
+        
+        const profileMap = new Map((profileRows ?? []).map((p) => [p.id, p.display_name]))
+        
+        setContributors(memberRows.map((m) => {
+          const profileName = profileMap.get(m.user_id)
+          const linkedMemberName = members.find((mem) => mem.user_id === m.user_id)?.name
+          const isCurrent = m.user_id === currentUser?.id
+          
+          // Preference: 1. Profile Name, 2. Linked Family Member Name, 3. Email (if self), 4. Short UUID
+          const displayName = profileName 
+            || linkedMemberName 
+            || (isCurrent ? currentUser?.email : null)
+            || `User ${m.user_id.slice(0, 6)}`
+
+          return {
+            user_id: m.user_id,
+            role: m.role as MemberRole,
+            display: displayName,
+          }
+        }))
+      }
+    } catch (err) {
+      console.error(err)
+      addToast('Failed to load management data', 'error')
     } finally {
-      setLoadingInvites(false)
+      setLoadingData(false)
+    }
+  }
+
+  async function updateContributorRole(userId: string, newRole: MemberRole) {
+    setUpdatingContributorId(userId)
+    try {
+      const { error } = await supabase
+        .from('tree_members')
+        .update({ role: newRole })
+        .eq('tree_id', treeId)
+        .eq('user_id', userId)
+      
+      if (error) throw error
+
+      setContributors(prev => prev.map(c => c.user_id === userId ? { ...c, role: newRole } : c))
+      addToast('Role updated successfully', 'success')
+    } catch {
+      addToast('Failed to update user role', 'error')
+    } finally {
+      setUpdatingContributorId(null)
+    }
+  }
+
+  async function updateInviteRole(inviteId: string, newRole: MemberRole) {
+    setUpdatingInviteId(inviteId)
+    try {
+      const { error } = await supabase
+        .from('invites')
+        .update({ role: newRole })
+        .eq('id', inviteId)
+      
+      if (error) throw error
+
+      setInvites(prev => prev.map(i => i.id === inviteId ? { ...i, role: newRole } : i))
+      addToast('Invite updated successfully', 'success')
+    } catch {
+      addToast('Failed to update invite configuration', 'error')
+    } finally {
+      setUpdatingInviteId(null)
     }
   }
 
@@ -347,88 +436,162 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
 
           {tab === 'manage' && (
             <>
-              {loadingInvites ? (
+              {loadingData ? (
                 <div className="flex justify-center py-12">
                   <div className="w-7 h-7 rounded-full border-2 border-ft-v500 border-t-transparent animate-spin" />
                 </div>
-              ) : invites.length === 0 ? (
-                <div className="text-center py-12">
-                  <Share2 size={28} className="text-ft-text3 mx-auto mb-3" />
-                  <p className="text-sm text-ft-text3">No invites yet</p>
-                  <p className="text-xs text-ft-text3 mt-1">
-                    Generate a link on the Share tab
-                  </p>
-                </div>
               ) : (
-                <div className="space-y-2.5">
-                  {invites.map((invite) => {
-                    const status = getInviteStatus(invite)
-                    return (
-                      <div
-                        key={invite.id}
-                        className="bg-ft-bg3 border border-ft-border rounded-xl p-3.5"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-start gap-2.5 min-w-0">
-                            <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${statusDot[status]}`} />
+                <div className="space-y-6">
+                  {/* Contributors Section */}
+                  {contributors.length > 0 && (
+                    <div>
+                      <h3 className="text-[10px] uppercase tracking-widest text-ft-text3 font-semibold mb-3 px-1 flex items-center gap-1.5">
+                        <Users size={12} />
+                        Members ({contributors.length})
+                      </h3>
+                      <div className="bg-ft-bg3 border border-ft-border rounded-xl overflow-hidden divide-y divide-ft-border/50">
+                        {contributors.map((c) => (
+                          <div key={c.user_id} className="p-3 flex items-center justify-between gap-3 bg-ft-bg3 hover:bg-ft-bg4/30 transition-colors">
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-ft-text truncate">
-                                {invite.members?.name ?? 'General invite'}
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider ${roleBadge[invite.role]}`}>
-                                  {invite.role}
-                                </span>
-                                <span className="text-[11px] text-ft-text3">
-                                  {status === 'claimed' ? 'Accepted' : status === 'expired' ? 'Expired' : 'Awaiting…'}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-ft-text3 mt-1">
-                                <Clock size={10} className="inline mr-1" />
-                                {formatExpiry(invite.expires_at)}
+                                {c.display}
+                                {c.user_id === currentUser?.id && <span className="text-[11px] opacity-60 ml-1">(you)</span>}
                               </p>
                             </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            {status === 'pending' && (
-                              <button
-                                onClick={() => handleCopyInvite(invite.token)}
-                                className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-teal hover:bg-ft-teal/10 transition-colors"
-                                title="Copy link"
-                              >
-                                <Copy size={13} />
-                              </button>
-                            )}
-
-                            {status !== 'claimed' && (
-                              <button
-                                onClick={() => handleRevoke(invite.id)}
-                                disabled={revokingId === invite.id}
-                                className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-rose hover:bg-rose-950/30 transition-colors disabled:opacity-40"
-                                title="Revoke invite"
-                              >
-                                {revokingId === invite.id ? (
-                                  <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+                            {isOwner && c.user_id !== currentUser?.id && c.role !== 'owner' ? (
+                              <div className="relative">
+                                {updatingContributorId === c.user_id ? (
+                                  <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin text-ft-text3" />
                                 ) : (
-                                  <Trash2 size={13} />
+                                  <select
+                                    value={c.role}
+                                    onChange={(e) => updateContributorRole(c.user_id, e.target.value as MemberRole)}
+                                    className="bg-ft-bg4 border border-ft-border text-xs text-ft-text2 rounded-lg px-2 py-1 outline-none focus:border-ft-border3 cursor-pointer appearance-none"
+                                  >
+                                    <option value="editor">Editor</option>
+                                    <option value="viewer">Viewer</option>
+                                  </select>
                                 )}
-                              </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 bg-ft-bg4 text-ft-text3 rounded-md border border-ft-border uppercase">
+                                {c.role}
+                              </span>
                             )}
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    )
-                  })}
+                    </div>
+                  )}
+
+                  {/* Invites Section */}
+                  <div>
+                    <h3 className="text-[10px] uppercase tracking-widest text-ft-text3 font-semibold mb-3 px-1 flex items-center gap-1.5">
+                      <Share2 size={12} />
+                      Pending & Past Invites ({invites.length})
+                    </h3>
+                    
+                    {invites.length === 0 ? (
+                      <div className="text-center py-8 bg-ft-bg3/50 rounded-xl border border-ft-border border-dashed">
+                        <p className="text-xs text-ft-text3">No invite links generated yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {invites.map((invite) => {
+                          const status = getInviteStatus(invite)
+                          const invUrl = getInviteUrl(invite.token)
+                          return (
+                            <div
+                              key={invite.id}
+                              className="bg-ft-bg3 border border-ft-border rounded-xl p-3.5"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-start gap-2.5 min-w-0 w-full">
+                                  <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${statusDot[status]}`} />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-ft-text truncate">
+                                      {invite.members?.name ?? 'General invite'}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      {status !== 'claimed' ? (
+                                        <div className="relative flex items-center">
+                                          {updatingInviteId === invite.id ? (
+                                            <div className="w-3.5 h-3.5 border-2 border-ft-v500 border-t-transparent rounded-full animate-spin" />
+                                          ) : (
+                                            <select
+                                              value={invite.role}
+                                              onChange={(e) => updateInviteRole(invite.id, e.target.value as MemberRole)}
+                                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider border cursor-pointer bg-ft-bg3 outline-none focus:ring-1 focus:ring-ft-v500 ${roleBadge[invite.role]}`}
+                                            >
+                                              <option value="editor" className="bg-ft-bg3 text-ft-text">Editor</option>
+                                              <option value="viewer" className="bg-ft-bg3 text-ft-text">Viewer</option>
+                                            </select>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full uppercase tracking-wider ${roleBadge[invite.role]}`}>
+                                          {invite.role}
+                                        </span>
+                                      )}
+                                      <span className="text-[11px] text-ft-text3">
+                                        {status === 'claimed' ? 'Accepted' : status === 'expired' ? 'Expired' : 'Awaiting…'}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* Explicitly show generated link URL */}
+                                    <div className="mt-2 bg-ft-bg4/50 border border-ft-border rounded-lg px-2 py-1 text-[10px] font-mono text-ft-teal/90 truncate select-all cursor-text" title={invUrl}>
+                                      {invUrl}
+                                    </div>
+
+                                    <p className="text-[11px] text-ft-text3 mt-1.5">
+                                      <Clock size={10} className="inline mr-1" />
+                                      {formatExpiry(invite.expires_at)}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                                  {status === 'pending' && (
+                                    <button
+                                      onClick={() => handleCopyInvite(invite.token)}
+                                      className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-teal hover:bg-ft-teal/10 transition-colors"
+                                      title="Copy link"
+                                    >
+                                      <Copy size={13} />
+                                    </button>
+                                  )}
+
+                                  {status !== 'claimed' && (
+                                    <button
+                                      onClick={() => handleRevoke(invite.id)}
+                                      disabled={revokingId === invite.id}
+                                      className="p-1.5 rounded-lg text-ft-text3 hover:text-ft-rose hover:bg-rose-950/30 transition-colors disabled:opacity-40"
+                                      title="Revoke invite"
+                                    >
+                                      {revokingId === invite.id ? (
+                                        <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
+                                      ) : (
+                                        <Trash2 size={13} />
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
               <button
-                onClick={loadInvites}
-                className="w-full py-2 text-xs text-ft-text3 hover:text-ft-text2 transition-colors"
+                onClick={loadAllManagementData}
+                className="w-full py-2.5 mt-4 text-xs text-ft-text3 hover:text-ft-text2 border border-ft-border rounded-xl bg-ft-bg3/50 hover:bg-ft-bg3 transition-colors"
               >
                 <Users size={11} className="inline mr-1.5" />
-                Refresh
+                Refresh Management Data
               </button>
             </>
           )}
