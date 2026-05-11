@@ -106,10 +106,13 @@ export function MemberSidebar({ sideMap, treeId, myMemberId, readOnly = false, o
   const side = member ? (sideMap[member.id] ?? 'unknown') : 'unknown'
 
   useEffect(() => {
-    setConfirmDelete(false)
-    setShowPath(false)
-    setEditingRelId(null)
-    setConfirmRemoveRelId(null)
+    const t = setTimeout(() => {
+      setConfirmDelete(false)
+      setShowPath(false)
+      setEditingRelId(null)
+      setConfirmRemoveRelId(null)
+    }, 0)
+    return () => clearTimeout(t)
   }, [selectedMemberId])
 
   const connections = relationships

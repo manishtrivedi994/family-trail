@@ -49,7 +49,9 @@ export function useTrees() {
   }
 
   useEffect(() => {
-    fetchTrees()
+    const t = setTimeout(() => { fetchTrees() }, 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
   return { trees, loading, error, refetch: fetchTrees }

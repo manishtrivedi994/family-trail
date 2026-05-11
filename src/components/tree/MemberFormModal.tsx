@@ -64,7 +64,10 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
       .filter(Boolean) as Member[]
   }, [storeRelationships, storeMembers, anchorMemberId])
 
-  useEffect(() => { setGrandparentTargetId(null) }, [relation, anchorMemberId])
+  useEffect(() => {
+    const t = setTimeout(() => { setGrandparentTargetId(null) }, 0)
+    return () => clearTimeout(t)
+  }, [relation, anchorMemberId])
 
   const relationOptions: { value: Relation; label: string }[] = [
     { value: 'Parent',      label: `Parent of ${anchorMember?.name ?? 'them'}` },
@@ -142,13 +145,58 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
 
       upsertMember(newMember)
 
+      let ghostCreated = false
       if (!isFirstMember && anchorMemberId) {
+        const effectiveRels = [...storeRelationships]
+
+        // TASK: Ghost node intervention for multi-hop relatives with no parent stem
+        if ((relation === 'Grandparent' || relation === 'Aunt/Uncle') && anchorParents.length === 0) {
+          try {
+            // 1. Create placeholder parent
+            const { data: ghostNode, error: ghostErr } = await supabase
+              .from('members')
+              .insert({
+                tree_id: treeId,
+                name: 'Unknown (Parent)',
+                gender: 'other',
+                is_living: true,
+                created_by: user.id,
+              })
+              .select().single()
+
+            if (ghostErr) throw ghostErr
+            if (ghostNode) {
+              upsertMember(ghostNode)
+              // 2. Connect Ghost -> Anchor (so the anchor now has a parent)
+              const { data: ghostEdge, error: edgeErr } = await supabase
+                .from('relationships')
+                .insert({
+                  tree_id: treeId,
+                  from_id: ghostNode.id,
+                  to_id: anchorMemberId,
+                  type: 'parent_of'
+                })
+                .select().single()
+
+              if (edgeErr) throw edgeErr
+              if (ghostEdge) {
+                upsertRelationship(ghostEdge)
+                effectiveRels.push(ghostEdge) // update array passed to deriveRelationships
+                ghostCreated = true
+              }
+            }
+          } catch (err) {
+            console.warn('Failed to create auto-wire ghost parent:', err)
+            // Fallback to original path if ghost fail
+          }
+        }
+
         const derived = deriveRelationships(
           newMember.id,
           anchorMemberId,
           relation,
           treeId,
-          storeRelationships,
+          effectiveRels,
           grandparentTargetId ?? undefined
         )
 
@@ -181,7 +229,9 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
           }
         }
 
-        if (relation === 'Grandparent' && anchorParents.length === 0) {
+        if (ghostCreated) {
+          addToast(`${newMember.name} added — edit "Unknown (Parent)" to fill details`, 'success')
+        } else if (relation === 'Grandparent' && anchorParents.length === 0) {
           addToast(`${newMember.name} added — add a parent first to connect them properly`, 'info')
         } else {
           const count = derived.relationships.length

@@ -52,40 +52,44 @@ export function InviteClaim() {
   const [claimError, setClaimError] = useState('')
 
   useEffect(() => {
-    if (!token) { setPageState('invalid'); return }
+    const t = setTimeout(() => {
+      if (!token) { setPageState('invalid'); return }
 
-    fetchInviteByToken(token).then((inv) => {
-      if (!inv) { setPageState('invalid'); return }
+      fetchInviteByToken(token).then((inv) => {
+        if (!inv) { setPageState('invalid'); return }
 
-      const status = getInviteStatus(inv)
-      if (status === 'expired') { setPageState('invalid'); return }
+        const status = getInviteStatus(inv)
+        if (status === 'expired') { setPageState('invalid'); return }
 
-      // Already claimed by someone else
-      if (inv.claimed_by && inv.claimed_by !== user?.id) {
-        setPageState('invalid')
-        return
-      }
+        // Already claimed by someone else
+        if (inv.claimed_by && inv.claimed_by !== user?.id) {
+          setPageState('invalid')
+          return
+        }
 
-      // Already claimed by current user
-      if (inv.claimed_by && inv.claimed_by === user?.id) {
+        // Already claimed by current user
+        if (inv.claimed_by && inv.claimed_by === user?.id) {
+          setInvite(inv)
+          if (inv.top_member_names) setMemberNames(inv.top_member_names)
+          setPageState('claimed')
+          return
+        }
+
         setInvite(inv)
         if (inv.top_member_names) setMemberNames(inv.top_member_names)
-        setPageState('claimed')
-        return
-      }
-
-      setInvite(inv)
-      if (inv.top_member_names) setMemberNames(inv.top_member_names)
-      setPageState('valid')
-    })
+        setPageState('valid')
+      })
+    }, 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user?.id])
 
-  async function handleClaim(userId: string) {
+  async function handleClaim() {
     if (!invite) return
     setClaiming(true)
     setClaimError('')
     try {
-      await claimInvite(invite, userId)
+      await claimInvite(invite.token)
       navigate(`/tree/${invite.tree_id}?newMember=true`)
     } catch (err) {
       setClaimError(err instanceof Error ? err.message : 'Failed to join tree')
@@ -96,7 +100,11 @@ export function InviteClaim() {
   // Auto-claim if the user is already logged in when they land here
   useEffect(() => {
     if (pageState === 'valid' && user?.id && !claiming && invite) {
-      handleClaim(user.id)
+      // Defers execution to avoid cascading React state updates during effect mounting
+      const t = setTimeout(() => {
+        handleClaim()
+      }, 0)
+      return () => clearTimeout(t)
     }
   }, [pageState, user?.id, !!invite])
 
@@ -257,7 +265,7 @@ export function InviteClaim() {
                 {claimError && <p className="text-ft-rose text-xs">{claimError}</p>}
 
                 <button
-                  onClick={() => handleClaim(user.id)}
+                  onClick={() => handleClaim()}
                   disabled={claiming}
                   className="bg-gradient-to-br from-ft-v500 to-ft-v400 text-white font-semibold rounded-2xl px-8 py-3.5 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(124,92,255,0.45)] transition-all w-full text-sm disabled:opacity-50 disabled:pointer-events-none"
                 >
@@ -278,7 +286,7 @@ export function InviteClaim() {
 
                 {claimError && <p className="text-ft-rose text-xs">{claimError}</p>}
 
-                <EmailOTPForm onSuccess={handleClaim} redirectTo={window.location.href} />
+                <EmailOTPForm onSuccess={() => handleClaim()} redirectTo={window.location.href} />
               </div>
             )}
           </div>

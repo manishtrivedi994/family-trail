@@ -281,25 +281,35 @@ export function getSideMap(
   // from ancestors, so siblings (and aunts/uncles) end up as 'unknown'.
   // Do a single-pass expansion for both owner-side and spouse-side.
   const expandSide = (targetSide: MemberSide, skipRootId: string | null) => {
-    const sideIds = [...sideMap.entries()]
+    const queue = [...sideMap.entries()]
       .filter(([, s]) => s === targetSide || (targetSide === 'ancestor' && s === 'owner'))
       .map(([id]) => id)
 
-    sideIds.forEach((memberId) => {
+    let head = 0
+    while (head < queue.length) {
+      const memberId = queue[head++]
+      
       relationships
         .filter((r) => r.type === 'sibling_of' && (r.from_id === memberId || r.to_id === memberId))
         .forEach((r) => {
           const sibId = r.from_id === memberId ? r.to_id : r.from_id
-          if (!sideMap.has(sibId)) sideMap.set(sibId, targetSide)
+          if (!sideMap.has(sibId)) {
+            sideMap.set(sibId, targetSide)
+            queue.push(sibId)
+          }
         })
+
       if (memberId !== skipRootId) {
         relationships
           .filter((r) => r.type === 'parent_of' && r.from_id === memberId)
           .forEach((r) => {
-            if (!sideMap.has(r.to_id)) sideMap.set(r.to_id, targetSide)
+            if (!sideMap.has(r.to_id)) {
+              sideMap.set(r.to_id, targetSide)
+              queue.push(r.to_id)
+            }
           })
       }
-    })
+    }
   }
 
   expandSide('ancestor', ownerId)

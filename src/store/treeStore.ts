@@ -44,7 +44,11 @@ export const useTreeStore = create<TreeState>()(
       if (idx >= 0) s.members[idx] = m
       else s.members.push(m)
     }),
-    removeMember: (id) => set((s) => { s.members = s.members.filter(x => x.id !== id) }),
+    removeMember: (id) => set((s) => {
+      s.members = s.members.filter(x => x.id !== id)
+      // Cascade clean-up relationships attached to this member
+      s.relationships = s.relationships.filter(x => x.from_id !== id && x.to_id !== id)
+    }),
     upsertRelationship: (r) => set((s) => {
       const idx = s.relationships.findIndex(x => x.id === r.id)
       if (idx >= 0) s.relationships[idx] = r

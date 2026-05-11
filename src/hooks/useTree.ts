@@ -11,7 +11,9 @@ function cacheKey(treeId: string) {
 function saveToCache(treeId: string, members: Member[], relationships: Relationship[]) {
   try {
     localStorage.setItem(cacheKey(treeId), JSON.stringify({ members, relationships, cachedAt: Date.now() }))
-  } catch {}
+  } catch (e) {
+    console.debug('Cache save failed:', e)
+  }
 }
 
 function loadFromCache(treeId: string): { members: Member[]; relationships: Relationship[] } | null {

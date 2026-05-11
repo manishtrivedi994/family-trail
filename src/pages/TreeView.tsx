@@ -133,12 +133,16 @@ export function TreeView() {
   useEffect(() => {
     if (!isNewMember || loading) return
     const key = `ft_welcomed_${treeId}`
-    if (!localStorage.getItem(key)) setShowWelcome(true)
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      next.delete('newMember')
-      return next
-    }, { replace: true })
+    // Defer side effect processing out of sync render commit to prevent React state collision warnings
+    const t = setTimeout(() => {
+      if (!localStorage.getItem(key)) setShowWelcome(true)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('newMember')
+        return next
+      }, { replace: true })
+    }, 0)
+    return () => clearTimeout(t)
   }, [isNewMember, loading, treeId, setSearchParams])
 
   // Track page view when tree loads

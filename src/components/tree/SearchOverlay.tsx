@@ -45,7 +45,8 @@ export function SearchOverlay({ members, sideMap, onSelect, onClose }: SearchOve
   }, [])
 
   useEffect(() => {
-    setActiveIndex(0)
+    const t = setTimeout(() => { setActiveIndex(0) }, 0)
+    return () => clearTimeout(t)
   }, [query])
 
   // Scroll active item into view

@@ -32,15 +32,6 @@ export function TreeSettings() {
   const [deleting, setDeleting] = useState(false)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    loadTree()
-    loadContributors()
-  }, [treeId])
-
-  useEffect(() => {
-    if (editingName) nameInputRef.current?.focus()
-  }, [editingName])
-
   async function loadTree() {
     const { data } = await supabase.from('trees').select('*').eq('id', treeId).single()
     if (data) {
@@ -72,6 +63,19 @@ export function TreeSettings() {
       }))
     )
   }
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      loadTree()
+      loadContributors()
+    }, 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [treeId])
+
+  useEffect(() => {
+    if (editingName) nameInputRef.current?.focus()
+  }, [editingName])
 
   async function saveName() {
     setEditingName(false)

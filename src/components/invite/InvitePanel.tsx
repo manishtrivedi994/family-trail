@@ -65,13 +65,20 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
   const [revokingId, setRevokingId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (preselectedMemberId !== undefined) {
-      setSelectedMemberId(preselectedMemberId ?? '')
-    }
+    const t = setTimeout(() => {
+      if (preselectedMemberId !== undefined) {
+        setSelectedMemberId(preselectedMemberId ?? '')
+      }
+    }, 0)
+    return () => clearTimeout(t)
   }, [preselectedMemberId])
 
   useEffect(() => {
-    if (tab === 'manage') loadInvites()
+    const t = setTimeout(() => {
+      if (tab === 'manage') loadInvites()
+    }, 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab])
 
   async function loadInvites() {
