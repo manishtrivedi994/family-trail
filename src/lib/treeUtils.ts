@@ -12,9 +12,10 @@ interface NewRelationship {
 }
 
 export type DeriveResult =
-  | { ok: true; relationships: NewRelationship[]; reason?: undefined }
-  | { ok: false; reason: 'NEEDS_DISAMBIGUATION' }
-  | { ok: false; reason: 'CYCLE'; violations: { from_id: string; to_id: string }[] }
+  | { ok: true; relationships: NewRelationship[]; reason?: undefined; violations?: undefined; violatorId?: undefined }
+  | { ok: false; reason: 'NEEDS_DISAMBIGUATION'; violations?: undefined; violatorId?: undefined }
+  | { ok: false; reason: 'CYCLE'; violations: { from_id: string; to_id: string }[]; violatorId?: undefined }
+  | { ok: false; reason: 'MAX_PARENTS_EXCEEDED'; violations?: undefined; violatorId?: string }
 
 export function wouldCreateCycle(
   parentId: string,
@@ -81,6 +82,7 @@ export function deriveRelationships(
 ): DeriveResult {
   const result: NewRelationship[] = []
   const cycleViolations: { from_id: string; to_id: string }[] = []
+  let maxParentsViolatorId: string | undefined = undefined
 
   function parentsOf(personId: string): string[] {
     return relationships.filter(r => r.type === 'parent_of' && r.to_id === personId).map(r => r.from_id)
@@ -108,6 +110,17 @@ export function deriveRelationships(
       cycleViolations.push({ from_id, to_id })
       return
     }
+
+    // Check parent limit
+    if (type === 'parent_of') {
+      const existingCount = relationships.filter(r => r.type === 'parent_of' && r.to_id === to_id).length
+      const pendingCount = result.filter(r => r.type === 'parent_of' && r.to_id === to_id).length
+      if (existingCount + pendingCount >= 2) {
+        maxParentsViolatorId = to_id
+        return
+      }
+    }
+
     const duplicate =
       relationships.some(r => r.from_id === from_id && r.to_id === to_id && r.type === type) ||
       result.some(r => r.from_id === from_id && r.to_id === to_id && r.type === type)
@@ -179,6 +192,7 @@ export function deriveRelationships(
   }
 
   if (cycleViolations.length > 0) return { ok: false, reason: 'CYCLE', violations: cycleViolations }
+  if (maxParentsViolatorId) return { ok: false, reason: 'MAX_PARENTS_EXCEEDED', violatorId: maxParentsViolatorId }
   return { ok: true, relationships: result }
 }
 

@@ -209,6 +209,12 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
               `Cannot add ${name} as ${relation} of ${anchorMem?.name ?? 'them'} — this would create a loop in the family tree.`,
               'error'
             )
+          } else if (derived.reason === 'MAX_PARENTS_EXCEEDED') {
+            const violatorName = storeMembers.find(m => m.id === derived.violatorId)?.name || 'A family member'
+            addToast(
+              `Cannot add connection — ${violatorName} already has 2 parents.`,
+              'error'
+            )
           }
           removeMember(newMember.id)
           await supabase.from('members').delete().eq('id', newMember.id)

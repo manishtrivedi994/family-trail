@@ -84,11 +84,21 @@ export function RelationshipsPanel({ member, onClose }: RelationshipsPanelProps)
 
     const { from_id, to_id, type } = toDBRelationship(relType, member.id, selectedTarget.id)
 
-    if (type === 'parent_of' && wouldCreateCycle(from_id, to_id, relationships)) {
-      const parentName = relType === 'parent_of_selected' ? member.name : selectedTarget.name
-      const childName  = relType === 'parent_of_selected' ? selectedTarget.name : member.name
-      addToast(describeCycleError(parentName, childName, 'parent'), 'error')
-      return
+    if (type === 'parent_of') {
+      if (wouldCreateCycle(from_id, to_id, relationships)) {
+        const parentName = relType === 'parent_of_selected' ? member.name : selectedTarget.name
+        const childName  = relType === 'parent_of_selected' ? selectedTarget.name : member.name
+        addToast(describeCycleError(parentName, childName, 'parent'), 'error')
+        return
+      }
+      
+      // Enforce max 2 parents limit
+      const existingParentCount = relationships.filter(r => r.type === 'parent_of' && r.to_id === to_id).length
+      if (existingParentCount >= 2) {
+        const childName = relType === 'parent_of_selected' ? selectedTarget.name : member.name
+        addToast(`Cannot add parent — ${childName} already has 2 parents.`, 'error')
+        return
+      }
     }
 
     setSaving(true)
