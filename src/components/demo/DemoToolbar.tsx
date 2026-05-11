@@ -7,7 +7,7 @@ export function DemoToolbar() {
   return (
     <div className="flex items-center justify-between px-4 py-2.5 shrink-0
                     bg-ft-bg2/90 backdrop-blur border-b border-ft-border">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" onClick={() => navigate('/')}>
         <LogoMark size={22} />
         <span className="font-display text-sm tracking-widest uppercase text-ft-text3">
           Family Trail
