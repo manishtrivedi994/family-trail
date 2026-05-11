@@ -158,40 +158,40 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
           </span>
         )}
 
-        {contributorCount > 1 && (
-          <div className="relative hidden sm:block" ref={contributorsRef}>
-            <button
-              onClick={handleOpenContributors}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ft-bg4 border border-ft-border text-[11px] text-ft-teal font-medium hover:border-ft-teal/30 hover:bg-ft-teal/10 transition-colors"
-            >
-              <Users size={11} />
-              {contributorCount} contributors
-            </button>
 
-            {showContributors && (
-              <div className="absolute left-0 top-full mt-1.5 bg-ft-bg3 border border-ft-border2 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] py-2 min-w-[200px] z-50">
-                <p className="px-4 pb-1.5 text-[10px] uppercase tracking-widest text-ft-text3 font-medium">Contributors</p>
-                {loadingContributors ? (
-                  <div className="px-4 py-2 text-xs text-ft-text3">Loading…</div>
-                ) : (
-                  contributorList.map((c) => (
-                    <div key={c.user_id} className="flex items-center justify-between px-4 py-2 gap-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-ft-v500 to-ft-v700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                          {c.display.slice(0, 1).toUpperCase()}
-                        </div>
-                        <span className="text-xs text-ft-text truncate">{c.display}</span>
+        <div className="relative hidden sm:block" ref={contributorsRef}>
+          <button
+            onClick={handleOpenContributors}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ft-bg4 border border-ft-border text-[11px] text-ft-teal font-medium hover:border-ft-teal/30 hover:bg-ft-teal/10 transition-colors"
+          >
+            <Users size={11} />
+            {contributorCount} contributors
+          </button>
+
+          {showContributors && (
+            <div className="absolute left-0 top-full mt-1.5 bg-ft-bg3 border border-ft-border2 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] py-2 min-w-[200px] z-50">
+              <p className="px-4 pb-1.5 text-[10px] uppercase tracking-widest text-ft-text3 font-medium">Contributors</p>
+              {loadingContributors ? (
+                <div className="px-4 py-2 text-xs text-ft-text3">Loading…</div>
+              ) : (
+                contributorList.map((c) => (
+                  <div key={c.user_id} className="flex items-center justify-between px-4 py-2 gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-ft-v500 to-ft-v700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                        {c.display.slice(0, 1).toUpperCase()}
                       </div>
-                      {c.role === 'owner' && (
-                        <Crown size={11} className="text-ft-gold shrink-0" />
-                      )}
+                      <span className="text-xs text-ft-text truncate">{c.display}</span>
                     </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                    {c.role === 'owner' && (
+                      <Crown size={11} className="text-ft-gold shrink-0" />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
 
         {isOnline ? (
           <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/30 text-[11px] text-emerald-400 font-medium">
