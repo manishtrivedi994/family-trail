@@ -61,8 +61,8 @@ export function InviteClaim() {
         const status = getInviteStatus(inv)
         if (status === 'expired') { setPageState('invalid'); return }
 
-        // Already claimed by someone else
-        if (inv.claimed_by && inv.claimed_by !== user?.id) {
+        // Already claimed by someone else (Only restrict if it was a personal invite)
+        if (inv.member_id && inv.claimed_by && inv.claimed_by !== user?.id) {
           setPageState('invalid')
           return
         }

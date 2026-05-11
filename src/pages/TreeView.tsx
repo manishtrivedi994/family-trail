@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ReactFlowProvider } from '@xyflow/react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, GitBranch, Home, Search, User, UserPlus, WifiOff } from 'lucide-react'
+import { AlertTriangle, GitBranch, Home, Lock, Search, User, UserPlus, WifiOff } from 'lucide-react'
 import { useTree } from '../hooks/useTree'
 import { useTreeStore } from '../store/treeStore'
 import { useAuthStore } from '../store/authStore'
@@ -187,6 +187,32 @@ export function TreeView() {
     setFocusTarget(memberId)
     useTreeStore.getState().setSelectedMember(memberId)
     trackEvent('search_used', { tree_id: treeId })
+  }
+
+  if (!loading && !tree) {
+    return (
+      <div className="min-h-screen bg-ft-bg flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="relative z-10 w-full max-w-sm text-center card-glass p-8 space-y-5">
+          <div className="w-14 h-14 rounded-full bg-ft-bg3 border border-ft-border flex items-center justify-center mx-auto text-ft-text3">
+            <Lock size={24} />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-ft-text mb-2">Tree not found</h1>
+            <p className="text-sm text-ft-text2 leading-relaxed">
+              This tree is either private or doesn't exist. You need an invite to access it.
+            </p>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={() => navigate(user ? '/dashboard' : '/')}
+              className="w-full py-3 rounded-2xl bg-ft-bg4 border border-ft-border text-ft-text font-medium hover:border-ft-border2 hover:bg-ft-bg3 transition-all text-sm"
+            >
+              Go to dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

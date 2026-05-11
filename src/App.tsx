@@ -81,9 +81,7 @@ function AnimatedRoutes() {
           </ProtectedRoute>
         } />
         <Route path="/tree/:id" element={
-          <ProtectedRoute>
-            <PageTransition><TreeView /></PageTransition>
-          </ProtectedRoute>
+          <PageTransition><TreeView /></PageTransition>
         } />
         <Route path="/tree/:treeId/settings" element={
           <ProtectedRoute>
@@ -91,9 +89,7 @@ function AnimatedRoutes() {
           </ProtectedRoute>
         } />
         <Route path="/tree/:treeId/member/:memberId" element={
-          <ProtectedRoute>
-            <MemberPage />
-          </ProtectedRoute>
+          <MemberPage />
         } />
         <Route path="/demo" element={
           <PageTransition><DemoTreeView /></PageTransition>
