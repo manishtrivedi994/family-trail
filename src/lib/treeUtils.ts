@@ -345,12 +345,40 @@ export function buildFlowGraph(
 
   const g = new Dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'TB', ranksep: 80, nodesep: 40 })
+  // Increase ranksep and nodesep for more breathing room
+  g.setGraph({ rankdir: 'TB', ranksep: 120, nodesep: 80 })
 
   members.forEach((m) => g.setNode(m.id, { width: NODE_WIDTH, height: NODE_HEIGHT }))
 
+  // In @dagrejs/dagre v3, using minlen: 0 or fractional values causes a runtime crash.
+  // Instead, to force horizontal alignment for spouses and siblings, we inject invisible
+  // zero-dimension dummy nodes that they connect to, leveraging standard rank derivation.
+  const addedHorizontalPairs = new Set<string>()
+
   relationships.forEach((r) => {
-    if (r.type === 'parent_of') g.setEdge(r.from_id, r.to_id)
+    if (r.type === 'parent_of') {
+      g.setEdge(r.from_id, r.to_id)
+    } else if (r.type === 'spouse_of' || r.type === 'sibling_of') {
+      const [first, second] = [r.from_id, r.to_id].sort()
+      const pairKey = `${r.type}-${first}-${second}`
+      
+      if (!addedHorizontalPairs.has(pairKey)) {
+        addedHorizontalPairs.add(pairKey)
+        
+        const dummyId = `_dummy_${pairKey}`
+        g.setNode(dummyId, { width: 0, height: 0 })
+
+        if (r.type === 'spouse_of') {
+          // Spouses align by pointing to a shared invisible 'child' node beneath them
+          g.setEdge(first, dummyId, { weight: 20, minlen: 1 })
+          g.setEdge(second, dummyId, { weight: 20, minlen: 1 })
+        } else {
+          // Siblings align by pointing from a shared invisible 'parent' node above them
+          g.setEdge(dummyId, first, { weight: 10, minlen: 1 })
+          g.setEdge(dummyId, second, { weight: 10, minlen: 1 })
+        }
+      }
+    }
   })
 
   Dagre.layout(g)
@@ -373,15 +401,43 @@ export function buildFlowGraph(
     }
   })
 
-  const edges: Edge[] = relationships.map((r) => ({
-    id: r.id,
-    source: r.from_id,
-    target: r.to_id,
-    type: 'relationshipEdge',
-    sourceHandle: r.type === 'spouse_of' ? 'r' : 'b',
-    targetHandle: r.type === 'spouse_of' ? 'l' : 't',
-    data: { relType: r.type },
-  }))
+  const nodePositions = new Map(nodes.map((n) => [n.id, n.position]))
+
+  const edges: Edge[] = relationships.map((r) => {
+    const isHorizontal = r.type === 'spouse_of' || r.type === 'sibling_of'
+    let sourceHandle = 'b'
+    let targetHandle = 't'
+
+    if (isHorizontal) {
+      const posSrc = nodePositions.get(r.from_id)
+      const posTgt = nodePositions.get(r.to_id)
+      
+      if (posSrc && posTgt) {
+        // Dynamically pick Left/Right handle based on current graph positions
+        // to prevent edge lines from wrapping around nodes awkwardly
+        if (posSrc.x > posTgt.x) {
+          sourceHandle = 'l'
+          targetHandle = 'r'
+        } else {
+          sourceHandle = 'r'
+          targetHandle = 'l'
+        }
+      } else {
+        sourceHandle = 'r'
+        targetHandle = 'l'
+      }
+    }
+
+    return {
+      id: r.id,
+      source: r.from_id,
+      target: r.to_id,
+      type: 'relationshipEdge',
+      sourceHandle,
+      targetHandle,
+      data: { relType: r.type },
+    }
+  })
 
   return { nodes, edges }
 }

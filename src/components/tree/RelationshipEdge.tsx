@@ -23,10 +23,10 @@ export function RelationshipEdge({
 
   const strokeColor =
     relType === 'spouse_of'
-      ? 'rgba(255,255,255,0.14)'
+      ? 'rgba(255,255,255,0.28)'
       : relType === 'sibling_of'
-      ? 'rgba(155,122,255,0.25)'
-      : 'rgba(155,122,255,0.40)'
+      ? 'rgba(155,122,255,0.45)'
+      : 'rgba(155,122,255,0.65)'
 
   const strokeDasharray =
     relType === 'spouse_of' ? '5 4' : relType === 'sibling_of' ? '2 3' : undefined
