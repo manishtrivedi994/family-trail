@@ -35,6 +35,7 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
   const overflowRef = useRef<HTMLDivElement>(null)
 
   const [showContributors, setShowContributors] = useState(false)
+  const [showContributorsInMenu, setShowContributorsInMenu] = useState(false)
   const [contributorList, setContributorList] = useState<ContributorInfo[]>([])
   const [loadingContributors, setLoadingContributors] = useState(false)
   const contributorsRef = useRef<HTMLDivElement>(null)
@@ -70,8 +71,7 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
     return () => document.removeEventListener('mousedown', handler)
   }, [showContributors])
 
-  async function handleOpenContributors() {
-    setShowContributors((v) => !v)
+  async function fetchContributors() {
     if (contributorList.length > 0 || !tree) return
     setLoadingContributors(true)
     try {
@@ -90,17 +90,33 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
       const profileMap = new Map(
         (profiles ?? []).map((p: { id: string; display_name: string | null }) => [p.id, p.display_name])
       )
+      const memberNameMap = new Map(
+        members.filter((m) => m.user_id).map((m) => [m.user_id, m.name])
+      )
 
       setContributorList(
         treeMembers.map((m: { user_id: string; role: string }) => ({
           user_id: m.user_id,
           role: m.role as MemberRole,
-          display: (profileMap.get(m.user_id) as string | null) ?? m.user_id.slice(0, 8) + '…',
+          display:
+            (profileMap.get(m.user_id) as string | null) ??
+            memberNameMap.get(m.user_id) ??
+            m.user_id.slice(0, 8) + '…',
         }))
       )
     } finally {
       setLoadingContributors(false)
     }
+  }
+
+  async function handleOpenContributors() {
+    setShowContributors((v) => !v)
+    await fetchContributors()
+  }
+
+  async function handleOpenContributorsInMenu() {
+    setShowContributorsInMenu((v) => !v)
+    await fetchContributors()
   }
 
   async function handleLeaveTree() {
@@ -247,7 +263,41 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
           </button>
 
           {showOverflow && (
-            <div className="absolute right-0 top-full mt-1.5 bg-ft-bg3 border border-ft-border2 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] py-1 w-52 z-50">
+            <div className="absolute right-0 top-full mt-1.5 bg-ft-bg3 border border-ft-border2 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] py-1 w-56 z-50">
+              {contributorCount > 1 && (
+                <>
+                  <button
+                    onClick={handleOpenContributorsInMenu}
+                    className="w-full px-4 py-2.5 text-sm text-ft-teal hover:bg-ft-border hover:text-ft-text transition-colors flex items-center justify-between text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Users size={14} />
+                      Contributors
+                    </span>
+                    <span className="text-xs text-ft-text3">{contributorCount}</span>
+                  </button>
+                  {showContributorsInMenu && (
+                    <div className="mx-2 mb-1 bg-ft-bg4 rounded-xl overflow-hidden">
+                      {loadingContributors ? (
+                        <div className="px-3 py-2 text-xs text-ft-text3">Loading…</div>
+                      ) : (
+                        contributorList.map((c) => (
+                          <div key={c.user_id} className="flex items-center justify-between px-3 py-2 gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-ft-v500 to-ft-v700 flex items-center justify-center text-[9px] font-bold text-white shrink-0">
+                                {c.display.slice(0, 1).toUpperCase()}
+                              </div>
+                              <span className="text-xs text-ft-text truncate">{c.display}</span>
+                            </div>
+                            {c.role === 'owner' && <Crown size={10} className="text-ft-gold shrink-0" />}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  <div className="my-1 border-t border-ft-border" />
+                </>
+              )}
               {isOwnerInTree && (
                 <button
                   onClick={() => { setShowOverflow(false); onFocusMe() }}
