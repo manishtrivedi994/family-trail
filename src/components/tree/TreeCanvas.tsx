@@ -124,6 +124,7 @@ interface TreeCanvasProps {
   focusMemberId?: string | null
   exportTrigger?: number
   treeName?: string
+  readOnly?: boolean
 }
 
 export function TreeCanvas({
@@ -132,6 +133,7 @@ export function TreeCanvas({
   focusMemberId = null,
   exportTrigger = 0,
   treeName = 'family_tree',
+  readOnly = false,
 }: TreeCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
@@ -156,6 +158,8 @@ export function TreeCanvas({
         edgeTypes={edgeTypes}
         minZoom={0.2}
         maxZoom={2.5}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
         defaultEdgeOptions={{ type: 'relationshipEdge' }}
         proOptions={{ hideAttribution: true }}
         style={{ background: '#08060F' }}

@@ -71,13 +71,14 @@ interface MemberSidebarProps {
   sideMap: Record<string, MemberSide>
   treeId: string
   myMemberId: string | null
+  readOnly?: boolean
   onEdit: (member: Member) => void
   onAddConnection: (member: Member) => void
   onInvite: (member: Member) => void
   onAddRelative: (member: Member) => void
 }
 
-export function MemberSidebar({ sideMap, treeId, myMemberId, onEdit, onAddConnection, onInvite, onAddRelative }: MemberSidebarProps) {
+export function MemberSidebar({ sideMap, treeId, myMemberId, readOnly = false, onEdit, onAddConnection, onInvite, onAddRelative }: MemberSidebarProps) {
   const navigate = useNavigate()
   const selectedMemberId = useTreeStore((s) => s.selectedMemberId)
   const setSelectedMember = useTreeStore((s) => s.setSelectedMember)
@@ -374,7 +375,7 @@ export function MemberSidebar({ sideMap, treeId, myMemberId, onEdit, onAddConnec
 
               {/* Action row */}
               <div className="mt-3">
-                {confirmDelete ? (
+                {readOnly ? null : confirmDelete ? (
                   <div className="bg-rose-950/30 border border-rose-800/30 rounded-xl p-3">
                     <div className="flex items-start gap-2 mb-3">
                       <AlertTriangle size={14} className="text-ft-rose mt-0.5 shrink-0" />

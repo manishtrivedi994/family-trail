@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Cake, Download, GitBranch, LogOut, Plus, Settings, X, Lock, Globe, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -303,6 +303,46 @@ function BirthdaysWidget({ birthdays }: { birthdays: UpcomingBirthday[] }) {
   )
 }
 
+function FromDemoWelcomeModal({ onCreateTree, onDismiss }: { onCreateTree: () => void; onDismiss: () => void }) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-start justify-center px-4"
+      variants={backdropVariants}
+      initial="hidden"
+      animate="visible"
+      exit="hidden"
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onDismiss} />
+      <motion.div
+        className="relative bg-ft-bg2 border border-ft-border2 rounded-3xl p-8 w-full max-w-md mt-32 text-center"
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+      >
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-ft-v500 to-ft-v400 flex items-center justify-center mx-auto mb-5">
+          <GitBranch size={24} className="text-white" />
+        </div>
+        <h2 className="font-display text-2xl font-bold text-ft-text mb-2">Welcome to Family Trail</h2>
+        <p className="text-ft-text2 text-sm leading-relaxed mb-6">
+          You just explored the Sharma–Mehta family tree. Now build your own.
+        </p>
+        <div className="flex flex-col gap-3">
+          <button onClick={onCreateTree} className="btn-primary w-full">
+            Create my first tree
+          </button>
+          <button
+            onClick={onDismiss}
+            className="border border-ft-border2 text-ft-v200 rounded-2xl px-8 py-3.5 hover:bg-ft-border hover:border-ft-border3 transition-all w-full text-sm font-medium"
+          >
+            Explore dashboard
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 function InstallBanner({ onInstall, onDismiss }: { onInstall: () => void; onDismiss: () => void }) {
   return (
     <motion.div
@@ -337,9 +377,13 @@ function InstallBanner({ onInstall, onDismiss }: { onInstall: () => void; onDism
 
 export function Dashboard() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { trees, loading, error } = useTrees()
   const { user } = useAuthStore()
   const [showModal, setShowModal] = useState(false)
+  const [showFromDemoModal, setShowFromDemoModal] = useState(() =>
+    searchParams.get('fromDemo') === 'true'
+  )
   const [birthdays, setBirthdays] = useState<UpcomingBirthday[]>([])
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
   const [showInstallBanner, setShowInstallBanner] = useState(false)
@@ -413,6 +457,20 @@ export function Dashboard() {
     navigate(`/tree/${id}`)
   }
 
+  function dismissFromDemoModal() {
+    setShowFromDemoModal(false)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('fromDemo')
+      return next
+    }, { replace: true })
+  }
+
+  function handleFromDemoCreateTree() {
+    dismissFromDemoModal()
+    setShowModal(true)
+  }
+
   return (
     <div className="min-h-screen bg-ft-bg">
       <TopBar />
@@ -474,6 +532,15 @@ export function Dashboard() {
           </div>
         )}
       </main>
+
+      <AnimatePresence>
+        {showFromDemoModal && (
+          <FromDemoWelcomeModal
+            onCreateTree={handleFromDemoCreateTree}
+            onDismiss={dismissFromDemoModal}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showModal && (

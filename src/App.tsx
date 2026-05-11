@@ -9,6 +9,7 @@ import { ProtectedRoute } from './components/ui/ProtectedRoute'
 import { ToastContainer } from './components/ui/ToastContainer'
 import { Landing } from './pages/Landing'
 import { Auth } from './pages/Auth'
+import { DemoTreeView } from './pages/DemoTreeView'
 import { Dashboard } from './pages/Dashboard'
 import { TreeView } from './pages/TreeView'
 import { TreeSettings } from './pages/TreeSettings'
@@ -40,7 +41,10 @@ function AuthListener() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session) navigate('/dashboard')
+      if (session) {
+        const fromDemo = new URLSearchParams(window.location.search).get('fromDemo')
+        navigate(fromDemo ? '/dashboard?fromDemo=true' : '/dashboard')
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -93,6 +97,9 @@ function AnimatedRoutes() {
           <ProtectedRoute>
             <MemberPage />
           </ProtectedRoute>
+        } />
+        <Route path="/demo" element={
+          <PageTransition><DemoTreeView /></PageTransition>
         } />
         <Route path="/join/:token" element={<InviteClaim />} />
         <Route path="*" element={<Navigate to="/" replace />} />

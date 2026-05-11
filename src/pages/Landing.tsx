@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { GitBranch, Users, Shield, Smartphone } from 'lucide-react'
 import { AnimatedOrbs } from '../components/ui/AnimatedOrbs'
 import { LogoMark } from '../components/ui/LogoMark'
@@ -45,6 +45,8 @@ const stats = [
 
 
 export function Landing() {
+  const navigate = useNavigate()
+
   return (
     <div className="min-h-screen bg-ft-bg relative overflow-hidden">
       <AnimatedOrbs />
@@ -88,7 +90,7 @@ export function Landing() {
             <Link to="/auth" className="btn-primary">
               Start your tree
             </Link>
-            <button className="btn-ghost">See a live demo</button>
+            <button className="btn-ghost" onClick={() => navigate('/demo')}>See a live demo</button>
           </motion.div>
 
           {/* Stats */}

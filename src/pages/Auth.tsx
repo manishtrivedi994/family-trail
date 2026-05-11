@@ -47,7 +47,10 @@ export function Auth() {
     try {
       const { data, error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' })
       if (error) throw error
-      if (data.user) navigate('/dashboard')
+      if (data.user) {
+        const fromDemo = new URLSearchParams(window.location.search).get('fromDemo')
+        navigate(fromDemo ? '/dashboard?fromDemo=true' : '/dashboard')
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Invalid code')
     } finally {
