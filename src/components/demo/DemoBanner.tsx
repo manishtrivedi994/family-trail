@@ -24,7 +24,7 @@ export function DemoBanner() {
         </p>
       </div>
       <button
-        onClick={() => navigate('/auth?fromDemo=true')}
+        onClick={() => navigate('/?fromDemo=true')}
         className="flex-shrink-0 text-sm font-semibold px-4 py-1.5 rounded-xl
                    bg-gradient-to-br from-ft-v500 to-ft-v400 text-white
                    hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(124,92,255,0.4)]

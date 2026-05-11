@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
 import { GitBranch, Users, Shield, Smartphone } from 'lucide-react'
 import { AnimatedOrbs } from '../components/ui/AnimatedOrbs'
 import { LogoMark } from '../components/ui/LogoMark'
+import { AuthModal } from '../components/ui/AuthModal'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -46,6 +49,10 @@ const stats = [
 
 export function Landing() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const fromDemo = searchParams.get('fromDemo') === 'true'
+  const openAuth = searchParams.get('openAuth') === 'true'
+  const [authOpen, setAuthOpen] = useState(fromDemo || openAuth)
 
   return (
     <div className="min-h-screen bg-ft-bg relative overflow-hidden">
@@ -87,9 +94,9 @@ export function Landing() {
 
           {/* CTAs */}
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 mt-2">
-            <Link to="/auth" className="btn-primary">
+            <button className="btn-primary" onClick={() => setAuthOpen(true)}>
               Start your tree
-            </Link>
+            </button>
             <button className="btn-ghost" onClick={() => navigate('/demo')}>See a live demo</button>
           </motion.div>
 
@@ -138,6 +145,8 @@ export function Landing() {
           ))}
         </div>
       </div>
+
+      {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     </div>
   )
 }

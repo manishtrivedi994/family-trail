@@ -12,6 +12,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!user) return <Navigate to="/auth" replace />
+  if (!user) return <Navigate to="/?openAuth=true" replace />
   return <>{children}</>
 }

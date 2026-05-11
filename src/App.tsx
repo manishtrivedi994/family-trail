@@ -8,7 +8,6 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary'
 import { ProtectedRoute } from './components/ui/ProtectedRoute'
 import { ToastContainer } from './components/ui/ToastContainer'
 import { Landing } from './pages/Landing'
-import { Auth } from './pages/Auth'
 import { DemoTreeView } from './pages/DemoTreeView'
 import { Dashboard } from './pages/Dashboard'
 import { TreeView } from './pages/TreeView'
@@ -70,9 +69,7 @@ function AnimatedRoutes() {
         <Route path="/" element={
           <PageTransition><Landing /></PageTransition>
         } />
-        <Route path="/auth" element={
-          <PageTransition><Auth /></PageTransition>
-        } />
+        <Route path="/auth" element={<Navigate to="/" replace />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <PageTransition><Dashboard /></PageTransition>

@@ -26,7 +26,7 @@ export function DemoToolbar() {
       </div>
 
       <button
-        onClick={() => navigate('/auth?fromDemo=true')}
+        onClick={() => navigate('/?fromDemo=true')}
         className="text-sm font-semibold px-4 py-2 rounded-xl
                    bg-gradient-to-br from-ft-v500 to-ft-v400 text-white
                    hover:-translate-y-0.5 transition-all"
