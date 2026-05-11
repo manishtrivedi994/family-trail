@@ -277,6 +277,30 @@ export function getSideMap(
     }
   }
 
+  // Mark siblings of owner and owner's ancestors as owner's family.
+  // Also mark children of owner's ancestors (aunts, uncles, siblings) that
+  // aren't already classified — these are connected via parent_of but the
+  // upward BFS above never traverses downward.
+  const ownerSideIds = [...sideMap.entries()]
+    .filter(([, side]) => side === 'owner' || side === 'ancestor')
+    .map(([id]) => id)
+
+  ownerSideIds.forEach((memberId) => {
+    relationships
+      .filter((r) => r.type === 'sibling_of' && (r.from_id === memberId || r.to_id === memberId))
+      .forEach((r) => {
+        const sibId = r.from_id === memberId ? r.to_id : r.from_id
+        if (!sideMap.has(sibId)) sideMap.set(sibId, 'ancestor')
+      })
+    if (memberId !== ownerId) {
+      relationships
+        .filter((r) => r.type === 'parent_of' && r.from_id === memberId)
+        .forEach((r) => {
+          if (!sideMap.has(r.to_id)) sideMap.set(r.to_id, 'ancestor')
+        })
+    }
+  })
+
   members.forEach((m) => { if (!sideMap.has(m.id)) sideMap.set(m.id, 'unknown') })
 
   const result: Record<string, MemberSide> = {}
