@@ -48,12 +48,12 @@ export async function fetchInviteByToken(token: string): Promise<InviteWithJoins
 }
 
 export async function fetchTreeInvites(treeId: string): Promise<InviteWithMember[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('invites')
     .select('*, members(name)')
     .eq('tree_id', treeId)
-    .order('created_at', { ascending: false })
 
+  if (error) throw error
   return (data ?? []) as InviteWithMember[]
 }
 
