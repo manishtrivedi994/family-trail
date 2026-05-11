@@ -146,6 +146,8 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
       upsertMember(newMember)
 
       let ghostCreated = false
+      let ghostNodeId: string | null = null
+
       if (!isFirstMember && anchorMemberId) {
         const effectiveRels = [...storeRelationships]
 
@@ -166,6 +168,7 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
 
             if (ghostErr) throw ghostErr
             if (ghostNode) {
+              ghostNodeId = ghostNode.id
               upsertMember(ghostNode)
               // 2. Connect Ghost -> Anchor (so the anchor now has a parent)
               const { data: ghostEdge, error: edgeErr } = await supabase
@@ -218,6 +221,10 @@ export function MemberFormModal({ treeId, ownerMemberId, isFirstMember, member, 
           }
           removeMember(newMember.id)
           await supabase.from('members').delete().eq('id', newMember.id)
+          if (ghostNodeId) {
+            removeMember(ghostNodeId)
+            await supabase.from('members').delete().eq('id', ghostNodeId)
+          }
           setSaving(false)
           return
         }

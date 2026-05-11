@@ -314,8 +314,8 @@ export function InvitePanel({ treeId, preselectedMemberId, onClose }: InvitePane
                 >
                   <option value="">Don't link to a specific person</option>
                   {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}{m.user_id ? ' (linked)' : ''}
+                    <option key={m.id} value={m.id} disabled={!!m.user_id}>
+                      {m.name}{m.user_id ? ' (already linked)' : ''}
                     </option>
                   ))}
                 </select>

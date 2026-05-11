@@ -140,7 +140,8 @@ export function deriveRelationships(
     case 'Grandparent': {
       const anchorParents = parentsOf(anchorId)
       if (anchorParents.length === 0) {
-        addRel(newMemberId, anchorId, 'parent_of')
+        // Do nothing: cannot wire grandparent without an intermediate parent.
+        // The UI is expected to handle ghost-node creation if desired.
       } else if (anchorParents.length === 1) {
         const parentId = anchorParents[0]
         addRel(newMemberId, parentId, 'parent_of')
