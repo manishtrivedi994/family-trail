@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Crosshair, Download, LogOut, MoreHorizontal, Search, Settings, Share2, UserPlus, Users } from 'lucide-react'
+import { ArrowLeft, Crosshair, Crown, Download, LogOut, MoreHorizontal, Search, Settings, Share2, UserPlus, Users } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useTreeStore } from '../../store/treeStore'
 import { useAuthStore } from '../../store/authStore'
 import { useToastStore } from '../../store/toastStore'
+import type { MemberRole } from '../../types'
+
+interface ContributorInfo {
+  user_id: string
+  role: MemberRole
+  display: string
+}
 
 interface TreeToolbarProps {
   onAddMember: () => void
@@ -27,6 +34,11 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
   const [showOverflow, setShowOverflow] = useState(false)
   const overflowRef = useRef<HTMLDivElement>(null)
 
+  const [showContributors, setShowContributors] = useState(false)
+  const [contributorList, setContributorList] = useState<ContributorInfo[]>([])
+  const [loadingContributors, setLoadingContributors] = useState(false)
+  const contributorsRef = useRef<HTMLDivElement>(null)
+
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? '?'
 
   const contributorCount = useMemo(
@@ -47,6 +59,49 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
     if (showOverflow) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [showOverflow])
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (contributorsRef.current && !contributorsRef.current.contains(e.target as Node)) {
+        setShowContributors(false)
+      }
+    }
+    if (showContributors) document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showContributors])
+
+  async function handleOpenContributors() {
+    setShowContributors((v) => !v)
+    if (contributorList.length > 0 || !tree) return
+    setLoadingContributors(true)
+    try {
+      const { data: treeMembers } = await supabase
+        .from('tree_members')
+        .select('user_id, role')
+        .eq('tree_id', tree.id)
+      if (!treeMembers) return
+
+      const userIds = treeMembers.map((m: { user_id: string }) => m.user_id)
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds)
+
+      const profileMap = new Map(
+        (profiles ?? []).map((p: { id: string; display_name: string | null }) => [p.id, p.display_name])
+      )
+
+      setContributorList(
+        treeMembers.map((m: { user_id: string; role: string }) => ({
+          user_id: m.user_id,
+          role: m.role as MemberRole,
+          display: (profileMap.get(m.user_id) as string | null) ?? m.user_id.slice(0, 8) + '…',
+        }))
+      )
+    } finally {
+      setLoadingContributors(false)
+    }
+  }
 
   async function handleLeaveTree() {
     if (!tree || !user || myRole === 'owner') return
@@ -88,10 +143,38 @@ export function TreeToolbar({ onAddMember, onFocusMe, onShare, onExport, onSearc
         )}
 
         {contributorCount > 1 && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ft-bg4 border border-ft-border text-[11px] text-ft-teal font-medium">
-            <Users size={11} />
-            {contributorCount} contributors
-          </span>
+          <div className="relative hidden sm:block" ref={contributorsRef}>
+            <button
+              onClick={handleOpenContributors}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-ft-bg4 border border-ft-border text-[11px] text-ft-teal font-medium hover:border-ft-teal/30 hover:bg-ft-teal/10 transition-colors"
+            >
+              <Users size={11} />
+              {contributorCount} contributors
+            </button>
+
+            {showContributors && (
+              <div className="absolute left-0 top-full mt-1.5 bg-ft-bg3 border border-ft-border2 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] py-2 min-w-[200px] z-50">
+                <p className="px-4 pb-1.5 text-[10px] uppercase tracking-widest text-ft-text3 font-medium">Contributors</p>
+                {loadingContributors ? (
+                  <div className="px-4 py-2 text-xs text-ft-text3">Loading…</div>
+                ) : (
+                  contributorList.map((c) => (
+                    <div key={c.user_id} className="flex items-center justify-between px-4 py-2 gap-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-ft-v500 to-ft-v700 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                          {c.display.slice(0, 1).toUpperCase()}
+                        </div>
+                        <span className="text-xs text-ft-text truncate">{c.display}</span>
+                      </div>
+                      {c.role === 'owner' && (
+                        <Crown size={11} className="text-ft-gold shrink-0" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         {isOnline ? (
