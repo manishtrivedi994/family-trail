@@ -406,6 +406,8 @@ export function buildFlowGraph(
 
   const edges: Edge[] = relationships.map((r) => {
     const isHorizontal = r.type === 'spouse_of' || r.type === 'sibling_of'
+    let visualSourceId = r.from_id
+    let visualTargetId = r.to_id
     let sourceHandle = 'b'
     let targetHandle = 't'
 
@@ -413,26 +415,23 @@ export function buildFlowGraph(
       const posSrc = nodePositions.get(r.from_id)
       const posTgt = nodePositions.get(r.to_id)
       
-      if (posSrc && posTgt) {
-        // Dynamically pick Left/Right handle based on current graph positions
-        // to prevent edge lines from wrapping around nodes awkwardly
-        if (posSrc.x > posTgt.x) {
-          sourceHandle = 'l'
-          targetHandle = 'r'
-        } else {
-          sourceHandle = 'r'
-          targetHandle = 'l'
-        }
-      } else {
-        sourceHandle = 'r'
-        targetHandle = 'l'
+      // Standard assumption: node A is left, node B is right.
+      // Source handle emits from the Right side ('r'), target receives on Left ('l').
+      sourceHandle = 'r'
+      targetHandle = 'l'
+
+      if (posSrc && posTgt && posSrc.x > posTgt.x) {
+        // The logical 'from' node is positioned visually to the RIGHT of the 'to' node.
+        // To fit ReactFlow's specific handle configurations, flip the visual roles.
+        visualSourceId = r.to_id
+        visualTargetId = r.from_id
       }
     }
 
     return {
       id: r.id,
-      source: r.from_id,
-      target: r.to_id,
+      source: visualSourceId,
+      target: visualTargetId,
       type: 'relationshipEdge',
       sourceHandle,
       targetHandle,
