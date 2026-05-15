@@ -1,26 +1,41 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { ReactFlowProvider } from '@xyflow/react'
-import { useTree } from '../hooks/useTree'
 import { useTreeStore } from '../store/treeStore'
 import { buildFlowGraph } from '../lib/treeUtils'
 import { TreeCanvas } from '../components/tree/TreeCanvas'
 import { MemberSidebar } from '../components/tree/MemberSidebar'
 import { DemoBanner } from '../components/demo/DemoBanner'
 import { DemoToolbar } from '../components/demo/DemoToolbar'
-import { DEMO_TREE_ID, DEMO_OWNER_NODE_ID } from '../lib/demo'
+import { DEMO_TREE_ID, DEMO_OWNER_NODE_ID, DEMO_TREE, GOT_MEMBERS, GOT_RELATIONSHIPS } from '../lib/demo'
 import type { MemberSide } from '../types'
 
 function DemoLoadingScreen() {
   return (
     <div className="flex flex-col h-screen bg-ft-bg items-center justify-center gap-4">
       <div className="w-10 h-10 rounded-full border-2 border-ft-v500/40 border-t-ft-v500 animate-spin" />
-      <p className="text-ft-text3 text-sm">Loading the Sharma–Mehta family…</p>
+      <p className="text-ft-text3 text-sm">Loading the Game of Thrones family…</p>
     </div>
   )
 }
 
 export function DemoTreeView() {
-  useTree(DEMO_TREE_ID)
+  const setLoading = useTreeStore((s) => s.setLoading)
+  const setTree = useTreeStore((s) => s.setTree)
+  const setMembers = useTreeStore((s) => s.setMembers)
+  const setRelationships = useTreeStore((s) => s.setRelationships)
+  const setMyRole = useTreeStore((s) => s.setMyRole)
+
+  useEffect(() => {
+    setLoading(true)
+    const t = setTimeout(() => {
+      setTree(DEMO_TREE)
+      setMembers(GOT_MEMBERS)
+      setRelationships(GOT_RELATIONSHIPS)
+      setMyRole('viewer')
+      setLoading(false)
+    }, 600)
+    return () => clearTimeout(t)
+  }, [setLoading, setTree, setMembers, setRelationships, setMyRole])
 
   const loading = useTreeStore((s) => s.loading)
   const members = useTreeStore((s) => s.members)
@@ -48,7 +63,7 @@ export function DemoTreeView() {
           <TreeCanvas
             nodes={nodes}
             edges={edges}
-            readOnly={true}
+            readOnly={false}
           />
           <MemberSidebar
             sideMap={sideMap}

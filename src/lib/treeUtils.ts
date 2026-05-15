@@ -347,7 +347,7 @@ export function buildFlowGraph(
   const g = new Dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
   // Increase ranksep and nodesep for more breathing room
-  g.setGraph({ rankdir: 'TB', ranksep: 120, nodesep: 80 })
+  g.setGraph({ rankdir: 'TB', ranksep: 180, nodesep: 100 })
 
   members.forEach((m) => g.setNode(m.id, { width: NODE_WIDTH, height: NODE_HEIGHT }))
 
@@ -358,7 +358,7 @@ export function buildFlowGraph(
 
   relationships.forEach((r) => {
     if (r.type === 'parent_of') {
-      g.setEdge(r.from_id, r.to_id)
+      g.setEdge(r.from_id, r.to_id, { weight: 10 })
     } else if (r.type === 'spouse_of' || r.type === 'sibling_of') {
       const [first, second] = [r.from_id, r.to_id].sort()
       const pairKey = `${r.type}-${first}-${second}`
@@ -371,12 +371,13 @@ export function buildFlowGraph(
 
         if (r.type === 'spouse_of') {
           // Spouses align by pointing to a shared invisible 'child' node beneath them
-          g.setEdge(first, dummyId, { weight: 20, minlen: 1 })
-          g.setEdge(second, dummyId, { weight: 20, minlen: 1 })
+          // Lower weight so it doesn't break parent-child hierarchy for cross-gen marriages
+          g.setEdge(first, dummyId, { weight: 1, minlen: 1 })
+          g.setEdge(second, dummyId, { weight: 1, minlen: 1 })
         } else {
           // Siblings align by pointing from a shared invisible 'parent' node above them
-          g.setEdge(dummyId, first, { weight: 10, minlen: 1 })
-          g.setEdge(dummyId, second, { weight: 10, minlen: 1 })
+          g.setEdge(dummyId, first, { weight: 1, minlen: 1 })
+          g.setEdge(dummyId, second, { weight: 1, minlen: 1 })
         }
       }
     }
